@@ -19,6 +19,16 @@ _HEADLESS_DRIVERS = ["kmsdrm", "fbcon", "directfb", "offscreen"]
 
 def _init_display() -> pygame.Surface:
     """Initialize pygame display, trying multiple SDL video drivers as needed."""
+    # Also detect a display server that's running locally but not exported (e.g. SSH session)
+    if not os.environ.get("DISPLAY") and os.path.exists("/tmp/.X11-unix/X0"):
+        os.environ["DISPLAY"] = ":0"
+    if not os.environ.get("WAYLAND_DISPLAY"):
+        for uid_dir in ("/run/user/1000", "/run/user/0"):
+            if os.path.exists(f"{uid_dir}/wayland-1"):
+                os.environ["WAYLAND_DISPLAY"] = "wayland-1"
+                os.environ.setdefault("XDG_RUNTIME_DIR", uid_dir)
+                break
+
     has_display_server = bool(
         os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")
     )
