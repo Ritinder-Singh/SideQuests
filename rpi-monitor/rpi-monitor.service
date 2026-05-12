@@ -7,6 +7,7 @@ Wants=network-online.target
 Type=simple
 User=pi
 WorkingDirectory=/home/pi/projects/SideQuests/rpi-monitor
+ExecStartPre=/bin/sh -c 'echo 0 > /sys/class/vtconsole/vtcon1/bind 2>/dev/null || true'
 ExecStart=/home/pi/projects/SideQuests/rpi-monitor/.venv/bin/python monitor.py
 Restart=on-failure
 RestartSec=5
