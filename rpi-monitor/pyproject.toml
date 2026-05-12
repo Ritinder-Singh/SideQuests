@@ -1,0 +1,13 @@
+[project]
+name = "rpi-monitor"
+version = "0.1.0"
+description = "Raspberry Pi 5 system monitor and control panel for a 3.5-inch SPI TFT touchscreen"
+requires-python = ">=3.11"
+dependencies = [
+    "pygame>=2.1.0",
+    "psutil>=5.9.0",
+    "paramiko>=3.0.0",
+    "docker>=6.0.0",
+    "gpiozero>=1.6.2",
+]
+
