@@ -1,4 +1,4 @@
-"""Write a pygame Surface to /dev/fb1 as RGB565."""
+"""Write a pygame Surface to /dev/fb0 as RGB565."""
 
 import pygame
 
@@ -10,7 +10,7 @@ except ImportError:
 
 
 class Framebuffer:
-    def __init__(self, path: str = "/dev/fb1"):
+    def __init__(self, path: str = "/dev/fb0"):
         self.path = path
         self._fb = None
         try:
