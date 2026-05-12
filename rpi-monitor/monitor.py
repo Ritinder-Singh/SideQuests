@@ -4,98 +4,35 @@
 import os
 import sys
 import threading
-import time
 
 import pygame
 
 import config
-from metrics import MetricsCollector, SystemMetrics
+from framebuffer import Framebuffer
+from metrics import MetricsCollector
 from renderer import Fonts, Renderer
 from touch_handler import TouchHandler
 
 
-_HEADLESS_DRIVERS = ["kmsdrm", "fbcon", "directfb", "offscreen"]
-
-
-def _init_display() -> pygame.Surface:
-    """Initialize pygame display, trying multiple SDL video drivers as needed."""
-    # Also detect a display server that's running locally but not exported (e.g. SSH session)
-    if not os.environ.get("DISPLAY") and os.path.exists("/tmp/.X11-unix/X0"):
-        os.environ["DISPLAY"] = ":0"
-    if not os.environ.get("WAYLAND_DISPLAY"):
-        for uid_dir in ("/run/user/1000", "/run/user/0"):
-            if os.path.exists(f"{uid_dir}/wayland-1"):
-                os.environ["WAYLAND_DISPLAY"] = "wayland-1"
-                os.environ.setdefault("XDG_RUNTIME_DIR", uid_dir)
-                break
-
-    has_display_server = bool(
-        os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")
-    )
-
-    if has_display_server:
-        pygame.init()
-        return pygame.display.set_mode((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
-
-    # Headless (SPI TFT / framebuffer) — set touch/fb env then probe drivers
-    os.environ.setdefault("SDL_FBDEV",    "/dev/fb1")
-    os.environ.setdefault("SDL_MOUSEDEV", "/dev/input/touchscreen")
-    os.environ.setdefault("SDL_MOUSEDRV", "TSLIB")
-
-    flags = pygame.FULLSCREEN | pygame.NOFRAME
-    last_err: Exception = RuntimeError("no drivers tried")
-
-    for driver in _HEADLESS_DRIVERS:
-        os.environ["SDL_VIDEODRIVER"] = driver
-        try:
-            pygame.display.init()
-            screen = pygame.display.set_mode(
-                (config.SCREEN_WIDTH, config.SCREEN_HEIGHT), flags
-            )
-            print(f"[display] using SDL_VIDEODRIVER={driver}")
-            return screen
-        except pygame.error as exc:
-            last_err = exc
-            pygame.display.quit()
-            # also try /dev/fb0 if fb1 failed on this driver
-            if os.environ.get("SDL_FBDEV") == "/dev/fb1":
-                os.environ["SDL_FBDEV"] = "/dev/fb0"
-                try:
-                    pygame.display.init()
-                    screen = pygame.display.set_mode(
-                        (config.SCREEN_WIDTH, config.SCREEN_HEIGHT), flags
-                    )
-                    print(f"[display] using SDL_VIDEODRIVER={driver} SDL_FBDEV=/dev/fb0")
-                    return screen
-                except pygame.error as exc2:
-                    last_err = exc2
-                    pygame.display.quit()
-                finally:
-                    os.environ["SDL_FBDEV"] = "/dev/fb1"
-
-    raise RuntimeError(
-        f"Could not open a display with any driver {_HEADLESS_DRIVERS}. "
-        f"Last error: {last_err}"
-    )
-
-
 def main():
-    screen = _init_display()
-    pygame.display.set_caption("RPi Monitor")
-    pygame.mouse.set_visible(False)
+    # Render offscreen — display output goes to /dev/fb1 via Framebuffer
+    os.environ["SDL_VIDEODRIVER"] = "offscreen"
+    pygame.init()
 
+    surface = pygame.Surface((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
+    fb       = Framebuffer("/dev/fb1")
     fonts    = Fonts()
-    renderer = Renderer(screen, fonts)
+    renderer = Renderer(surface, fonts)
     touch    = TouchHandler()
 
     # ── Background metrics thread ─────────────────────────────────────────────
-    stop_event     = threading.Event()
-    metrics_lock   = threading.Lock()
-    latest: list   = [None]   # latest[0] = SystemMetrics | None
+    stop_event   = threading.Event()
+    metrics_lock = threading.Lock()
+    latest: list = [None]
 
     def _metrics_loop():
         collector = MetricsCollector()
-        collector.collect()                      # prime cpu_percent counters
+        collector.collect()                 # prime cpu_percent counters
         while not stop_event.is_set():
             m = collector.collect()
             with metrics_lock:
@@ -157,7 +94,7 @@ def main():
         if not screensaver and touch.idle_seconds >= config.SCREENSAVER_TIMEOUT:
             screensaver = True
 
-        # ── Render ────────────────────────────────────────────────────────────
+        # ── Render to surface, then push to display ───────────────────────────
         with metrics_lock:
             metrics = latest[0]
 
@@ -168,12 +105,14 @@ def main():
             badge_counts = [0] * config.TAB_COUNT,
             dialog       = dialog,
         )
+        fb.flush(surface)
 
         clock.tick(config.FPS)
 
     # ── Shutdown ──────────────────────────────────────────────────────────────
     stop_event.set()
     metrics_thread.join(timeout=3)
+    fb.close()
     pygame.quit()
     sys.exit(0)
 

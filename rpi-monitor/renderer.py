@@ -84,7 +84,7 @@ class Renderer:
                 (0, 0, config.SCREEN_WIDTH, config.SCREEN_HEIGHT), 4,
             )
 
-        pygame.display.flip()
+        # Caller (monitor.py) is responsible for flushing surface to /dev/fb1
 
     # ── Tab routing ───────────────────────────────────────────────────────────
 
