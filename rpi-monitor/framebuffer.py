@@ -28,6 +28,9 @@ class Framebuffer:
             )
 
     def flush(self, surface: pygame.Surface):
+        import config
+        if config.DISPLAY_ROTATE:
+            surface = pygame.transform.rotate(surface, -config.DISPLAY_ROTATE)
         if _NUMPY:
             self._flush_numpy(surface)
         else:

@@ -1,7 +1,8 @@
 # Screen
-SCREEN_WIDTH = 480
+SCREEN_WIDTH  = 480
 SCREEN_HEIGHT = 320
-FPS = 30
+FPS           = 30
+DISPLAY_ROTATE = 180  # degrees: 0, 90, 180, 270
 
 # Colors
 BG_COLOR       = (13,  17,  23)
