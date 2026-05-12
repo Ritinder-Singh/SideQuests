@@ -159,7 +159,9 @@ class Renderer:
 
         scr.blit(fn.small.render("RAM", True, config.DIM_COLOR), (lm, y + 3))
         draw_progress_bar(scr, bar_x, y + 2, bar_w, 14, m.ram_percent)
-        ram_label = f"{m.ram_used_mb}M/{m.ram_total_mb}M {m.ram_percent:.0f}%"
+        ram_used_gb  = m.ram_used_mb  / 1024
+        ram_total_gb = m.ram_total_mb / 1024
+        ram_label = f"{ram_used_gb:.1f}G/{ram_total_gb:.1f}G {m.ram_percent:.0f}%"
         scr.blit(fn.small.render(ram_label, True, config.TEXT_COLOR),
                  (bar_x + bar_w + 5, y + 3))
         y += 22

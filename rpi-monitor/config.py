@@ -69,6 +69,19 @@ DOCKER_SOCKET = "unix://var/run/docker.sock"
 # Buzzer — set to a GPIO pin number to enable, None to disable
 BUZZER_GPIO_PIN = None
 
+# Touch (XPT2046 / ads7846)
+# Path to the evdev input device — adjust if evtest shows a different eventX
+TOUCH_DEVICE  = "/dev/input/touchscreen"
+# Raw ADC calibration range from the ads7846 overlay
+TOUCH_X_MIN   = 200
+TOUCH_X_MAX   = 3900
+TOUCH_Y_MIN   = 200
+TOUCH_Y_MAX   = 3900
+# Axis transforms for landscape orientation — tweak if tap coordinates are wrong
+TOUCH_SWAP_XY = True   # swap X and Y axes
+TOUCH_FLIP_X  = False
+TOUCH_FLIP_Y  = True
+
 # Ping targets
 PING_TARGETS = [
     ("8.8.8.8",    "Google DNS"),
