@@ -7,7 +7,7 @@ Before=network.target
 [Service]
 Type=simple
 WorkingDirectory=/home/pi/projects/SideQuests/rpi-monitor
-ExecStartPre=/bin/sh -c 'echo 0 > /sys/class/vtconsole/vtcon0/bind 2>/dev/null; echo 0 > /sys/class/vtconsole/vtcon1/bind 2>/dev/null; dd if=/dev/zero of=/dev/fb0 bs=307200 count=1 2>/dev/null || true'
+ExecStartPre=/bin/sh -c 'plymouth quit 2>/dev/null; echo 0 > /sys/class/vtconsole/vtcon0/bind 2>/dev/null; echo 0 > /sys/class/vtconsole/vtcon1/bind 2>/dev/null; dd if=/dev/zero of=/dev/fb0 bs=307200 count=1 2>/dev/null || true'
 ExecStart=/home/pi/projects/SideQuests/rpi-monitor/.venv/bin/python monitor.py
 Restart=on-failure
 RestartSec=5
