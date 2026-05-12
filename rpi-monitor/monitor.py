@@ -28,7 +28,7 @@ def main():
     pygame.init()
 
     surface  = pygame.Surface((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
-    fb       = Framebuffer("/dev/fb1")
+    fb       = Framebuffer("/dev/fb0")
     fonts    = Fonts()
     renderer = Renderer(surface, fonts)
 
