@@ -1,0 +1,15 @@
+[Unit]
+Description=RPi Monitor Display
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/projects/SideQuests/rpi-monitor
+ExecStart=/home/pi/projects/SideQuests/rpi-monitor/.venv/bin/python monitor.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
