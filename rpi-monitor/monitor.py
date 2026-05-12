@@ -14,36 +14,63 @@ from renderer import Fonts, Renderer
 from touch_handler import TouchHandler
 
 
-def _setup_sdl_for_pi():
-    """Set SDL env vars for a Pi framebuffer if no display server is present."""
-    if os.environ.get("DISPLAY"):
-        return  # running on a desktop / SSH with X forwarding — leave SDL alone
-    os.environ.setdefault("SDL_FBDEV",      "/dev/fb1")
-    os.environ.setdefault("SDL_VIDEODRIVER","fbcon")
-    os.environ.setdefault("SDL_MOUSEDEV",   "/dev/input/touchscreen")
-    os.environ.setdefault("SDL_MOUSEDRV",   "TSLIB")
+_HEADLESS_DRIVERS = ["kmsdrm", "fbcon", "directfb", "offscreen"]
+
+
+def _init_display() -> pygame.Surface:
+    """Initialize pygame display, trying multiple SDL video drivers as needed."""
+    has_display_server = bool(
+        os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")
+    )
+
+    if has_display_server:
+        pygame.init()
+        return pygame.display.set_mode((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
+
+    # Headless (SPI TFT / framebuffer) — set touch/fb env then probe drivers
+    os.environ.setdefault("SDL_FBDEV",    "/dev/fb1")
+    os.environ.setdefault("SDL_MOUSEDEV", "/dev/input/touchscreen")
+    os.environ.setdefault("SDL_MOUSEDRV", "TSLIB")
+
+    flags = pygame.FULLSCREEN | pygame.NOFRAME
+    last_err: Exception = RuntimeError("no drivers tried")
+
+    for driver in _HEADLESS_DRIVERS:
+        os.environ["SDL_VIDEODRIVER"] = driver
+        try:
+            pygame.display.init()
+            screen = pygame.display.set_mode(
+                (config.SCREEN_WIDTH, config.SCREEN_HEIGHT), flags
+            )
+            print(f"[display] using SDL_VIDEODRIVER={driver}")
+            return screen
+        except pygame.error as exc:
+            last_err = exc
+            pygame.display.quit()
+            # also try /dev/fb0 if fb1 failed on this driver
+            if os.environ.get("SDL_FBDEV") == "/dev/fb1":
+                os.environ["SDL_FBDEV"] = "/dev/fb0"
+                try:
+                    pygame.display.init()
+                    screen = pygame.display.set_mode(
+                        (config.SCREEN_WIDTH, config.SCREEN_HEIGHT), flags
+                    )
+                    print(f"[display] using SDL_VIDEODRIVER={driver} SDL_FBDEV=/dev/fb0")
+                    return screen
+                except pygame.error as exc2:
+                    last_err = exc2
+                    pygame.display.quit()
+                finally:
+                    os.environ["SDL_FBDEV"] = "/dev/fb1"
+
+    raise RuntimeError(
+        f"Could not open a display with any driver {_HEADLESS_DRIVERS}. "
+        f"Last error: {last_err}"
+    )
 
 
 def main():
-    _setup_sdl_for_pi()
-
-    pygame.init()
-
-    flags = 0
-    if os.environ.get("SDL_VIDEODRIVER") == "fbcon":
-        flags = pygame.FULLSCREEN | pygame.NOFRAME
-
-    try:
-        screen = pygame.display.set_mode(
-            (config.SCREEN_WIDTH, config.SCREEN_HEIGHT), flags
-        )
-    except pygame.error:
-        # Framebuffer /dev/fb1 not found — try fb0
-        os.environ["SDL_FBDEV"] = "/dev/fb0"
-        screen = pygame.display.set_mode(
-            (config.SCREEN_WIDTH, config.SCREEN_HEIGHT), flags
-        )
-
+    screen = _init_display()
     pygame.display.set_caption("RPi Monitor")
     pygame.mouse.set_visible(False)
 
