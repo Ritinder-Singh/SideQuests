@@ -78,9 +78,9 @@ TOUCH_X_MAX   = 3900
 TOUCH_Y_MIN   = 200
 TOUCH_Y_MAX   = 3900
 # Axis transforms for landscape orientation — tweak if tap coordinates are wrong
-TOUCH_SWAP_XY = True   # swap X and Y axes
+TOUCH_SWAP_XY = False
 TOUCH_FLIP_X  = False
-TOUCH_FLIP_Y  = True
+TOUCH_FLIP_Y  = False
 
 # Ping targets
 PING_TARGETS = [
