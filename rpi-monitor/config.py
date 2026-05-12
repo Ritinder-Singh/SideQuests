@@ -71,7 +71,7 @@ BUZZER_GPIO_PIN = None
 
 # Touch (XPT2046 / ads7846)
 # Path to the evdev input device — adjust if evtest shows a different eventX
-TOUCH_DEVICE  = "/dev/input/touchscreen"
+TOUCH_DEVICE  = "/dev/input/event3"
 # Raw ADC calibration range from the ads7846 overlay
 TOUCH_X_MIN   = 200
 TOUCH_X_MAX   = 3900
