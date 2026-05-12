@@ -21,27 +21,37 @@ CONTENT_H = config.SCREEN_HEIGHT - config.TAB_HEIGHT  # pixels above the tab bar
 
 # ── Font loader ───────────────────────────────────────────────────────────────
 
+_FONT_PATHS = [
+    "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+    "/usr/share/fonts/dejavu/DejaVuSansMono.ttf",
+    "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
+    "/usr/share/fonts/truetype/freefont/FreeMono.ttf",
+]
+
+
 class Fonts:
     def __init__(self):
         pygame.font.init()
-        self.small  = self._load(config.FONT_SIZE_SMALL)
-        self.normal = self._load(config.FONT_SIZE_NORMAL)
-        self.large  = self._load(config.FONT_SIZE_LARGE)
-        self.xlarge = self._load(config.FONT_SIZE_XLARGE)
+        ttf = self._find_ttf()
+        if ttf:
+            self.small  = pygame.font.Font(ttf, config.FONT_SIZE_SMALL)
+            self.normal = pygame.font.Font(ttf, config.FONT_SIZE_NORMAL)
+            self.large  = pygame.font.Font(ttf, config.FONT_SIZE_LARGE)
+            self.xlarge = pygame.font.Font(ttf, config.FONT_SIZE_XLARGE)
+        else:
+            # Last resort: pygame built-in (bitmap, will look pixelated)
+            self.small  = pygame.font.Font(None, config.FONT_SIZE_SMALL  + 4)
+            self.normal = pygame.font.Font(None, config.FONT_SIZE_NORMAL + 4)
+            self.large  = pygame.font.Font(None, config.FONT_SIZE_LARGE  + 4)
+            self.xlarge = pygame.font.Font(None, config.FONT_SIZE_XLARGE + 4)
 
     @staticmethod
-    def _load(size: int) -> pygame.font.Font:
-        candidates = [
-            "dejavusansmono",
-            "liberationmono",
-            "couriernew",
-            "freemono",
-        ]
-        for name in candidates:
-            f = pygame.font.SysFont(name, size)
-            if f:
-                return f
-        return pygame.font.Font(None, size)
+    def _find_ttf() -> str | None:
+        import os
+        for path in _FONT_PATHS:
+            if os.path.exists(path):
+                return path
+        return None
 
 
 # ── Renderer ──────────────────────────────────────────────────────────────────
