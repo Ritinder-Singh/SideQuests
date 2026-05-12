@@ -29,17 +29,23 @@ def _start_touch_thread(
         print("[touch] evdev not installed — run: uv add evdev")
         return False
 
-    # Resolve device path: try config path, then scan for ads7846
-    dev_path = config.TOUCH_DEVICE
-    if not os.path.exists(dev_path):
-        for d in evdev.list_devices():
+    # Always scan by name first so event number changes on reboot don't matter
+    dev_path = None
+    for d in evdev.list_devices():
+        try:
             dev = evdev.InputDevice(d)
             if "ads7846" in dev.name.lower() or "xpt2046" in dev.name.lower():
                 dev_path = d
                 break
+        except Exception:
+            continue
+    # Fall back to configured path if scan found nothing
+    if not dev_path:
+        if os.path.exists(config.TOUCH_DEVICE):
+            dev_path = config.TOUCH_DEVICE
         else:
-            print(f"[touch] device not found at {config.TOUCH_DEVICE} — "
-                  "check dtoverlay=ads7846 in /boot/firmware/config.txt")
+            print("[touch] ADS7846/XPT2046 device not found — "
+                  "check dtoverlay=waveshare35a in /boot/firmware/config.txt")
             return False
 
     def _map(raw_x: int, raw_y: int):
