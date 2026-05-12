@@ -73,20 +73,13 @@ class Renderer:
         self,
         metrics:      Optional[SystemMetrics],
         active_tab:   int = 0,
-        screensaver:  bool = False,
         badge_counts: Optional[List[int]] = None,
-        dialog:       Optional[ConfirmDialog] = None,
     ):
         self.screen.fill(config.BG_COLOR)
 
-        if screensaver:
-            self._draw_screensaver(metrics)
-        else:
-            self.tab_bar.active = active_tab
-            self._draw_content(active_tab, metrics)
-            self.tab_bar.draw(self.screen, badge_counts)
-            if dialog:
-                dialog.draw(self.screen)
+        self.tab_bar.active = active_tab
+        self._draw_content(active_tab, metrics)
+        self.tab_bar.draw(self.screen, badge_counts)
 
         if self._flash_color and time.time() < self._flash_until:
             pygame.draw.rect(
