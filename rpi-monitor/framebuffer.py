@@ -12,6 +12,7 @@ except ImportError:
 class Framebuffer:
     def __init__(self, path: str = "/dev/fb1"):
         self.path = path
+        self._fb = None
         try:
             self._fb = open(path, "wb")
         except PermissionError:
